@@ -28,7 +28,7 @@ type Job struct {
 	RunCommand  string
 	NextRun     time.Time
 	State       JobState
-	Hash        []byte
+	Hash        string
 }
 
 // Jobs - collection cron jobs
@@ -45,7 +45,8 @@ func (j *Job) encodeHash() {
 	// create byte slice of struct parts string
 	h.Write([]byte(hString))
 	// save sha1 sum
-	j.Hash = h.Sum(nil)
+	bs := h.Sum(nil)
+	j.Hash = fmt.Sprintf("%x", bs)
 
 }
 

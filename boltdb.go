@@ -37,7 +37,7 @@ func writeToDB(db *bolt.DB, data Job, bucket string) {
 			return err
 		}
 		fmt.Println(data.Hash)
-		err = b.Put(data.Hash, encoded)
+		err = b.Put([]byte(data.Hash), encoded)
 		return err
 	})
 }
