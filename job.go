@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/boltdb/bolt"
 	"github.com/gorhill/cronexpr"
 )
 
@@ -15,7 +19,6 @@ type JobState uint8
 const (
 	DISABLED JobState = iota
 	ENABLED  JobState = iota
-	RUNNING  JobState = iota
 )
 
 // Job - Struct for the Job Model
@@ -25,10 +28,26 @@ type Job struct {
 	RunCommand  string
 	NextRun     time.Time
 	State       JobState
+	Hash        []byte
 }
 
 // Jobs - collection cron jobs
 type Jobs map[int64][]Job
+
+func (j *Job) encodeHash() {
+	var hBuf bytes.Buffer
+	// create new Sha1 hash
+	h := sha1.New()
+	// concat struct values into a string
+	hBuf.WriteString(j.ImageName)
+	hBuf.WriteString(j.RunCommand)
+	hString := hBuf.String()
+	// create byte slice of struct parts string
+	h.Write([]byte(hString))
+	// save sha1 sum
+	j.Hash = h.Sum(nil)
+
+}
 
 // Add job to list of jobs
 func (j Jobs) Add(job Job) Jobs {
@@ -49,7 +68,7 @@ func (j Jobs) Add(job Job) Jobs {
 	return j
 }
 
-// Del  job to list of jobs
+// Del - delete job from the list
 func (j *Jobs) Del(key int64) {
 	delete(*j, key)
 }
@@ -79,7 +98,9 @@ func (j *Jobs) Poll(ticker <-chan time.Time) {
 	for {
 		select {
 		case <-ticker:
-			k := *j
+			k := *j // can't iterate over pointer. Copy to value internal to function
+			// ticker runs every second. Truncate to minute precision
+			// effectively always round down.
 			currentMinute := time.Now().Truncate(time.Minute).Unix()
 			if len(k[currentMinute]) != 0 {
 				for _, v := range k[currentMinute] {
@@ -87,9 +108,9 @@ func (j *Jobs) Poll(ticker <-chan time.Time) {
 					// run the job
 
 					// delete the job
-					k.Del(currentMinute)
+					go k.Del(currentMinute)
 					// add next run to list
-					k.Add(v)
+					go k.Add(v)
 
 				}
 			} else {
@@ -102,5 +123,24 @@ func (j *Jobs) Poll(ticker <-chan time.Time) {
 
 // Run job in job list
 func (j *Jobs) Run(job Job) {
+	// a lot of this depends on environment
+	// where the containers are being ran
 
+}
+
+func importDB(db *bolt.DB, jobs Jobs) {
+	db.View(func(tx *bolt.Tx) error {
+		job := Job{}
+		// Assume bucket exists and has keys
+		b := tx.Bucket([]byte("jobs"))
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if err := json.Unmarshal(v, &job); err != nil {
+				panic(err)
+			}
+			jobs.Add(job)
+		}
+
+		return nil
+	})
 }
