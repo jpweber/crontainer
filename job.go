@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -25,7 +26,7 @@ const (
 type Job struct {
 	CronPattern string
 	ImageName   string
-	RunCommand  string
+	RunCommand  []string
 	NextRun     time.Time
 	State       JobState
 	Hash        string
@@ -40,7 +41,7 @@ func (j *Job) encodeHash() {
 	h := sha1.New()
 	// concat struct values into a string
 	hBuf.WriteString(j.ImageName)
-	hBuf.WriteString(j.RunCommand)
+	hBuf.WriteString(strings.Join(j.RunCommand, ","))
 	hString := hBuf.String()
 	// create byte slice of struct parts string
 	h.Write([]byte(hString))
@@ -107,15 +108,13 @@ func (j *Jobs) Poll(ticker <-chan time.Time) {
 				for _, v := range k[currentMinute] {
 					log.Println("Running", v.ImageName)
 					// run the job
-
+					runContainer(v)
 					// delete the job
 					go k.Del(currentMinute)
 					// add next run to list
 					go k.Add(v)
 
 				}
-			} else {
-				log.Println("No jobs to Run")
 			}
 
 		}
