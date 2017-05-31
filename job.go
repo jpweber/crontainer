@@ -76,21 +76,28 @@ func (j *Jobs) Del(key int64) {
 }
 
 // RunList - Get jobs that should run now
-func (j *Jobs) RunList(time string) {
+// func (j *Jobs) RunList(time string) []byte {
 
-}
+// }
 
 // List jobs all that are stored
-func (j Jobs) List() {
-	for _, jobSet := range j {
-		for _, job := range jobSet {
-			fmt.Println("ImageName", job.ImageName)
-			fmt.Println("RunCommand", job.RunCommand)
-			fmt.Println("State", job.State)
-			fmt.Println("CronPattern", job.CronPattern)
-			fmt.Println("NextRun", job.NextRun)
-		}
+func (j Jobs) List() []byte {
+	// for _, jobSet := range j {
+	// 	for _, job := range jobSet {
+	// 		fmt.Println("ImageName", job.ImageName)
+	// 		fmt.Println("RunCommand", job.RunCommand)
+	// 		fmt.Println("State", job.State)
+	// 		fmt.Println("CronPattern", job.CronPattern)
+	// 		fmt.Println("NextRun", job.NextRun)
+	// 	}
+	// }
+
+	encoded, err := json.Marshal(j)
+	if err != nil {
+		log.Println("Json encoding error in RunList:", err)
 	}
+
+	return encoded
 
 }
 
@@ -110,7 +117,7 @@ func (j *Jobs) Poll(ticker <-chan time.Time) {
 					// run the job
 					runContainer(v)
 					// delete the job
-					go k.Del(currentMinute)
+					k.Del(currentMinute)
 					// add next run to list
 					go k.Add(v)
 
