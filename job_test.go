@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -56,7 +55,6 @@ func TestDel(t *testing.T) {
 	cronJobs.Add(testJob)
 
 	cronJobs.Del(0)
-	fmt.Println(cronJobs)
 	testData := cronJobs[0]
 	if len(testData) != 0 {
 		t.Error("Job was not deleted.")

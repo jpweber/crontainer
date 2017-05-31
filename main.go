@@ -2,23 +2,27 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/boltdb/bolt"
 )
 
 var (
-	db *bolt.DB
+	db       *bolt.DB
+	cronJobs Jobs
 )
 
 func main() {
+
+	log.Println("Starting Crontainer")
 
 	// Init Database
 	db = openDB("job-data.db")
 	initBucket(db, "jobs")
 
 	// Init Jobs list
-	cronJobs := Jobs{0: []Job{}}
+	cronJobs = Jobs{0: []Job{}}
 
 	// import any job data from db
 	importDB(db, cronJobs)
@@ -48,12 +52,9 @@ func main() {
 
 	// start the 1 minute ticker that looks for jobs
 	tickChan := time.NewTicker(time.Second * 1).C
-
-	// make a channel to keep us running until exited
-	done := make(chan bool, 1)
 	go cronJobs.Poll(tickChan)
 
-	// waiting until done = true
-	<-done
-
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", logger(serve))
+	http.ListenAndServe(":8675", mux)
 }
