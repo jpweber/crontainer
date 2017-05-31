@@ -1,12 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
-
-	"github.com/gorilla/schema"
 )
 
 // wrapper function for http logging
@@ -33,8 +32,8 @@ func post(w http.ResponseWriter, r *http.Request) {
 		log.Println("form parse problem " + strconv.Itoa(status))
 	}
 	payload := new(Job)
-	decoder := schema.NewDecoder()
-	err = decoder.Decode(payload, r.Form)
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&payload)
 	if err != nil {
 		log.Println(err)
 	}
