@@ -42,6 +42,14 @@ func writeToDB(db *bolt.DB, data Job, bucket string) {
 	})
 }
 
+func delFromDB(db *bolt.DB, digest string, bucket string) {
+	db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		err := b.Delete([]byte(digest))
+		return err
+	})
+}
+
 func readFromDB(db *bolt.DB, key, bucket string) []byte {
 	v := []byte("")
 	db.View(func(tx *bolt.Tx) error {

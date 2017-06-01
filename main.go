@@ -10,7 +10,8 @@ import (
 
 var (
 	db       *bolt.DB
-	cronJobs Jobs
+	cronJobs Schedule
+	jobList  JobList
 )
 
 func main() {
@@ -22,7 +23,8 @@ func main() {
 	initBucket(db, "jobs")
 
 	// Init Jobs list
-	cronJobs = Jobs{0: []Job{}}
+	cronJobs = Schedule{0: []Job{}}
+	jobList = make(JobList)
 
 	// import any job data from db
 	importDB(db, cronJobs)

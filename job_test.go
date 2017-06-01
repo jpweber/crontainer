@@ -4,11 +4,13 @@ import (
 	"testing"
 )
 
+func init() {
+	cronJobs = Schedule{0: []Job{}}
+	jobList = make(JobList)
+}
+
 // TestAdd - test adding a job to a fresh list of jobs
 func TestAdd(t *testing.T) {
-
-	// Init Jobs list
-	cronJobs := Jobs{0: []Job{}}
 
 	testJob := Job{
 		CronPattern: "*/1 * * * *",
@@ -42,9 +44,6 @@ func TestEncodeHash(t *testing.T) {
 // TestDel - test deleting a job from list of jobs
 func TestDel(t *testing.T) {
 
-	// Init Jobs list
-	cronJobs := Jobs{0: []Job{}}
-
 	testJob := Job{
 		CronPattern: "*/1 * * * *",
 		ImageName:   "jpweber/crontest:0.1.0",
@@ -54,7 +53,7 @@ func TestDel(t *testing.T) {
 
 	cronJobs.Add(testJob)
 
-	cronJobs.Del(0)
+	cronJobs.Del(0, "")
 	testData := cronJobs[0]
 	if len(testData) != 0 {
 		t.Error("Job was not deleted.")
